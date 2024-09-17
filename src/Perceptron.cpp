@@ -48,6 +48,34 @@ namespace Perceptron
             }
 
 
+            ~Perceptron()
+            {
+                for (int layer = 0; layer < numLayers - 1; layer++)
+                {
+
+                    for (int source = 0; source < layerSizes[layer]; source++)
+                    {
+                        delete[] weights[layer][source];
+                    }
+
+                    delete[] weights[layer];
+                }
+
+                delete[] weights;
+
+                for (int layer = 0; layer < numLayers; layer++)
+                {
+                    delete[] activations[layer];
+                    delete[] z[layer];
+                    delete[] biases[layer];
+                }
+
+                delete[] activations;
+                delete[] biases;
+                delete[] z;
+            }
+
+
             void print()
             {
                 std::cout << "Weights:" << std::endl;
@@ -116,7 +144,6 @@ namespace Perceptron
             float * forwardPropogation(float * input)
             {
                 int outputSize = layerSizes[numLayers - 1];
-                float * output = new float[outputSize];
 
                 // For each layer
                 for (int layer = 0; layer < numLayers; layer++)
@@ -144,14 +171,7 @@ namespace Perceptron
                     }
                 }
 
-                for (int neuron = 0; neuron < outputSize; neuron++)
-                {
-                    output[neuron] = activations[numLayers - 1][neuron];
-                }
-
-                // TODO - Free all memory.
-
-                return output;
+                return activations[numLayers - 1];
             }
 
 
@@ -160,7 +180,7 @@ namespace Perceptron
                 // Forward prop
                 float * forwardResult = forwardPropogation(input);
 
-                float * * errors = new float * [numLayers]; // Error of a node's activation
+                float * * errors = new float * [numLayers];
 
                 for (int layer = 0; layer < numLayers; layer++)
                 {
@@ -170,7 +190,7 @@ namespace Perceptron
                 // Output layer errors.
                 for (int neuron = 0; neuron < layerSizes[numLayers - 1]; neuron++)
                 {
-                    errors[numLayers - 1][neuron] = cost(goal[neuron], forwardResult[neuron]); // Output errors are the cost function.
+                    errors[numLayers - 1][neuron] = cost(goal[neuron], forwardResult[neuron]);
                 }
 
                 // Hidden layers errors.
@@ -210,7 +230,10 @@ namespace Perceptron
                     }
                 }
 
-                // TODO - Free all memory.
+                // Free all memory.
+                for (int layer = 0; layer < numLayers; layer++)
+                    delete[] errors[layer];
+                delete[] errors;
             }
 
 
