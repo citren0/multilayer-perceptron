@@ -1,28 +1,27 @@
 
-namespace Perceptron
+#include "Helpers.hpp"
+
+
+float Perceptron::dotProduct(float * weight, float * activation, int size)
 {
-    float dotProduct(float * weight, float * activation, int size)
+    float sum = 0;
+
+    for (int idx = 0; idx < size; idx++)
     {
-        float sum = 0;
-
-        for (int idx = 0; idx < size; idx++)
-        {
-            sum += weight[idx] * activation[idx];
-        }
-
-        return sum;
+        sum += weight[idx] * activation[idx];
     }
 
-    float sum(float * input, int size)
+    return sum;
+}
+
+float Perceptron::sum(float * input, int size)
+{
+    float sum = 0;
+
+    for (int idx = 0; idx < size; idx++)
     {
-        float sum = 0;
-
-        for (int idx = 0; idx < size; idx++)
-        {
-            sum += input[idx];
-        }
-
-        return sum;
+        sum += input[idx];
     }
-    
+
+    return sum;
 }

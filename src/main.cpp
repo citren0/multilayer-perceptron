@@ -1,50 +1,93 @@
-#include "Perceptron.cpp"
-#include "TrainingData.cpp"
+
+#include "Perceptron.hpp"
+#include "../MNIST_for_C/mnist.h"
+
+#define NUM_LAYERS 4
+#define TRAINING_EPOCHS 10
+#define NUM_CLASSES 10
+
 
 int main()
 {
-    int numLayers = 4;
-    int neuronsPerLayer[4] = { 2, 2, 2, 1 };
+    // Read MNIST
+    load_mnist();
 
-    Perceptron::Perceptron perceptron(numLayers, neuronsPerLayer, 0.2);
 
+    // Define neural net
+    int neuronsPerLayer[NUM_LAYERS] = { 784, 100, 50, 10 };
+    Perceptron::Perceptron perceptron(NUM_LAYERS, neuronsPerLayer, 0.01);
     perceptron.initializeWeightsAndBiases();
 
-    std::cout << "Training begin." << std::endl;
 
-    for (int reps = 0; reps < 100000; reps++)
+    // Transform training data to float format.
+    float * * transformedTrainingData = new float * [NUM_TRAIN];
+    float * * trainingLabels = new float * [NUM_TRAIN];
+    for (int i = 0; i < NUM_TRAIN; i++)
     {
-        for (int i = 0; i < NUM_TRAINING_DATA; i++)
+        transformedTrainingData[i] = new float[SIZE];
+        trainingLabels[i] = new float[NUM_CLASSES];
+
+        trainingLabels[i][train_label_char[i][0]] = 1.0;
+
+        for (int f = 0; f < SIZE; f++)
         {
-            perceptron.backPropogation(trainingInput[i], trainingGoal[i]);
+            transformedTrainingData[i][f] = (float)train_image_char[i][f] / MAX_BRIGHTNESS;
         }
     }
 
+
+    // Train MLPANN.
+    std::cout << "Training begin." << std::endl << std::endl;
+    for (int reps = 0; reps < TRAINING_EPOCHS; reps++)
+    {
+        std::cout << "Epoch " << reps << " begin..." << std::endl;
+
+        for (int i = 0; i < NUM_TRAIN; i++)
+        {
+            perceptron.backPropogation(transformedTrainingData[i], trainingLabels[i]);
+        }
+    }
     std::cout << "Training complete." << std::endl;
 
 
-    float input[2] = { 0, 0 };
+    // Transform test data.
+    float * * transformedTestData = new float * [NUM_TEST];
+    for (int i = 0; i < NUM_TEST; i++)
+    {
+        transformedTestData[i] = new float[SIZE];
 
-    float * output = perceptron.forwardPropogation(input);
-    std::cout << "Input = { " << input[0] << ", " << input[1] << " } Output = " << output[0] << std::endl;
+        for (int f = 0; f < SIZE; f++)
+        {
+            transformedTestData[i][f] = (float)test_image_char[i][f] / MAX_BRIGHTNESS;
+        }
+    }
 
-    input[0] = 0;
-    input[1] = 1;
 
-    output = perceptron.forwardPropogation(input);
-    std::cout << "Input = { " << input[0] << ", " << input[1] << " } Output = " << output[0] << std::endl;
+    // Run forward propagation on test examples.
+    int numRight = 0;
+    for (int test = 0; test < NUM_TEST; test++)
+    {
+        float * output = perceptron.forwardPropogation(transformedTestData[test]);
+        std::cout << "Input label = " << (int)test_label_char[test][0] << ", Predicted Class = ";
 
-    input[0] = 1;
-    input[1] = 0;
+        float highestProb = -1.0;
+        int highestClass = -1;
+        for (int classNum = 0; classNum < NUM_CLASSES; classNum++)
+        {
+            if (output[classNum] > highestProb)
+            {
+                highestClass = classNum;
+                highestProb = output[classNum];
+            }
+        }
+        std::cout << highestClass << std::endl;
 
-    output = perceptron.forwardPropogation(input);
-    std::cout << "Input = { " << input[0] << ", " << input[1] << " } Output = " << output[0] << std::endl;
-
-    input[0] = 1;
-    input[1] = 1;
-
-    output = perceptron.forwardPropogation(input);
-    std::cout << "Input = { " << input[0] << ", " << input[1] << " } Output = " << output[0] << std::endl;
+        if (highestClass == (int)test_label_char[test][0])
+        {
+            numRight++;
+        }
+    }
+    std::cout << std::endl << "Percentage right: " << ((float)numRight / NUM_TEST) << std::endl;
     
     return 0;
 }
