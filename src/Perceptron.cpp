@@ -11,54 +11,47 @@ namespace Perceptron
         this->layerSizes = layerSizes;
         this->learningRate = learningRate;
 
-        weights = new float * * [numLayers - 1]; // No weights from last layer.
-        for (int layer = 0; layer < numLayers - 1; layer++)
-        {
-            weights[layer] = new float * [layerSizes[layer + 1]]; // Destination neuron array.
+        layerOffsets = new int[numLayers];
+        weightLayerOffsets = new int[numLayers];
 
-            for (int dest = 0; dest < layerSizes[layer + 1]; dest++)
-            {
-                weights[layer][dest] = new float[layerSizes[layer]]; // Source neuron array.
-            }
-        }
-
-        activations = new float * [numLayers];
-        biases = new float * [numLayers];
-        z = new float * [numLayers];
+        // Calculate totalNumNeurons.
+        int sum = 0;
         for (int layer = 0; layer < numLayers; layer++)
         {
-            activations[layer] = new float[layerSizes[layer]];
-            z[layer] = new float[layerSizes[layer]];
-            biases[layer] = new float[layerSizes[layer]];
+            // Layer offset is the partial sum up to layer - 1.
+            layerOffsets[layer] = sum;
+
+            sum += layerSizes[layer];
         }
+        totalNumNeurons = sum;
+
+        // Calculate weightLayerOffsets.
+        int weightsSoFar = 0;
+        for (int layer = 0; layer < numLayers - 1; layer++)
+        {
+            weightLayerOffsets[layer] = weightsSoFar;
+
+            weightsSoFar += (layerSizes[layer] * layerSizes[layer + 1]);
+        }
+
+        // Weights array size will be the total weightLayerOffsets
+        weights = new float[weightsSoFar];
+
+        // Biases, activations, and z will be the size of the total number of neurons.
+        biases = new float[totalNumNeurons];
+        activations = new float[totalNumNeurons];
+        z = new float[totalNumNeurons];
 
     }
 
 
     Perceptron::~Perceptron()
     {
-        for (int layer = 0; layer < numLayers - 1; layer++)
-        {
-
-            for (int dest = 0; dest < layerSizes[layer + 1]; dest++)
-            {
-                delete[] weights[layer][dest];
-            }
-
-            delete[] weights[layer];
-        }
-
+        delete[] layerOffsets;
+        delete[] weightLayerOffsets;
         delete[] weights;
-
-        for (int layer = 0; layer < numLayers; layer++)
-        {
-            delete[] activations[layer];
-            delete[] z[layer];
-            delete[] biases[layer];
-        }
-
-        delete[] activations;
         delete[] biases;
+        delete[] activations;
         delete[] z;
     }
 
@@ -73,7 +66,7 @@ namespace Perceptron
             {
                 for (int sourceNeuron = 0; sourceNeuron < layerSizes[layer]; sourceNeuron++)
                 {
-                    std::cout << sourceNeuron << " -> " << destNeuron << ": " << weights[layer][destNeuron][sourceNeuron] << std::endl;
+                    std::cout << sourceNeuron << " -> " << destNeuron << ": " << weights[getWeightIdx(layer, destNeuron, sourceNeuron)] << std::endl;
                 }
             }
             std::cout << std::endl << std::endl;
@@ -84,7 +77,7 @@ namespace Perceptron
         {
             for (int neuron = 0; neuron < layerSizes[layer]; neuron++)
             {
-                std::cout << biases[layer][neuron] << " ";
+                std::cout << biases[layerOffsets[layer] + neuron] << " ";
             }
             std::cout << std::endl;
         }
@@ -94,7 +87,7 @@ namespace Perceptron
         {
             for (int neuron = 0; neuron < layerSizes[layer]; neuron++)
             {
-                std::cout << activations[layer][neuron] << " ";
+                std::cout << activations[layerOffsets[layer] + neuron] << " ";
             }
             std::cout << std::endl;
         }
@@ -108,7 +101,7 @@ namespace Perceptron
         {
             for (int neuron = 0; neuron < layerSizes[layer]; neuron++)
             {
-                std::cout << activations[layer][neuron] << " ";
+                std::cout << activations[layerOffsets[layer] + neuron] << " ";
             }
             std::cout << std::endl;
         }
@@ -125,8 +118,8 @@ namespace Perceptron
             {
                 for (int sourceNeuron = 0; sourceNeuron < layerSizes[layer]; sourceNeuron++)
                 {
-                    weights[layer][destNeuron][sourceNeuron] = 2 * ((float) rand()) / (float) RAND_MAX;
-                    weights[layer][destNeuron][sourceNeuron] -= 1;
+                    weights[getWeightIdx(layer, destNeuron, sourceNeuron)] = 2 * ((float) rand()) / (float) RAND_MAX;
+                    weights[getWeightIdx(layer, destNeuron, sourceNeuron)] -= 1;
                 }
             }
         }
@@ -135,8 +128,8 @@ namespace Perceptron
         {
             for (int neuron = 0; neuron < layerSizes[layer]; neuron++)
             {
-                biases[layer][neuron] = 2 * ((float) rand()) / (float) RAND_MAX;
-                biases[layer][neuron] -= 1;
+                biases[layerOffsets[layer] + neuron] = 2 * ((float) rand()) / (float) RAND_MAX;
+                biases[layerOffsets[layer] + neuron] -= 1;
             }
         }
     }
@@ -153,25 +146,25 @@ namespace Perceptron
                 if (layer == 0)
                 {
                     // Activation equals input.
-                    z[layer][neuron] = input[neuron] + biases[layer][neuron];
+                    z[neuron] = input[neuron] + biases[neuron];
 
-                    activations[layer][neuron] = input[neuron] + biases[layer][neuron];
+                    activations[neuron] = input[neuron] + biases[neuron];
                 }
                 else
                 {
-                    z[layer][neuron] = dotProduct(
-                                                    weights[layer - 1][neuron],
-                                                    activations[layer - 1],
-                                                    layerSizes[layer - 1]
-                                                    ) + biases[layer][neuron];
+                    z[layerOffsets[layer] + neuron] = dotProduct(
+                                                        &(weights[getWeightIdx(layer - 1, neuron, 0)]),
+                                                        &activations[layerOffsets[layer - 1]],
+                                                        layerSizes[layer - 1]
+                                                      ) + biases[layerOffsets[layer] + neuron];
 
-                    activations[layer][neuron] = sigmoid(z[layer][neuron], false);
+                    activations[layerOffsets[layer] + neuron] = sigmoid(z[layerOffsets[layer] + neuron], false);
                 }
             }
         }
 
         // Do not free result of this function.
-        return activations[numLayers - 1];
+        return &(activations[layerOffsets[numLayers - 1]]);
     }
 
 
@@ -202,10 +195,10 @@ namespace Perceptron
 
                 for (int next = 0; next < layerSizes[layer + 1]; next++)
                 {
-                    errorSum += (errors[layer + 1][next] * weights[layer][next][neuron]);
+                    errorSum += (errors[layer + 1][next] * weights[getWeightIdx(layer, next, neuron)]);
                 }
                 
-                errors[layer][neuron] = errorSum * sigmoid(z[layer][neuron], true);
+                errors[layer][neuron] = errorSum * sigmoid(z[layerOffsets[layer] + neuron], true);
             }
         }
 
@@ -216,7 +209,7 @@ namespace Perceptron
             {
                 for (int source = 0; source < layerSizes[layer]; source++)
                 {
-                    weights[layer][dest][source] -= learningRate * (errors[layer + 1][dest] * activations[layer][source]);
+                    weights[getWeightIdx(layer, dest, source)] -= learningRate * (errors[layer + 1][dest] * activations[layerOffsets[layer] + source]);
                 }
             }
         }
@@ -226,7 +219,7 @@ namespace Perceptron
         {
             for (int neuron = 0; neuron < layerSizes[layer]; neuron++)
             {
-                biases[layer][neuron] -= learningRate * (errors[layer][neuron]);
+                biases[layerOffsets[layer] + neuron] -= learningRate * (errors[layer][neuron]);
             }
         }
 
@@ -252,6 +245,12 @@ namespace Perceptron
     float Perceptron::cost(float expected, float calculated)
     {
         return (calculated - expected);
+    }
+
+
+    int Perceptron::getWeightIdx(int layer, int dest, int src)
+    {
+        return (weightLayerOffsets[layer] + (dest * layerSizes[layer]) + src);
     }
 
 };

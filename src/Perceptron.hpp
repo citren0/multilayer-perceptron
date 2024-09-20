@@ -10,13 +10,34 @@ namespace Perceptron
     {
         private:
             int numLayers;
+
             float learningRate;
-            int * layerSizes; // layerSizes[layer]
-            float * * * weights; // weights[source layer][destination neuron][source neuron]
-            float * * biases;
-            float * * activations; // activations[layer][neuron]
-            float * * z;
+
+            // layerSizes[layer]
+            int * layerSizes;
+
+            // totalNumNeurons = sum(layerSizes from 0 to N)
+            int totalNumNeurons;
+            
+            // layerOffsets[layer] = sum(layerSizes from 0 to layer - 1)
+            int * layerOffsets;
+
+            // weightLayerOffsets[layer] = sum((layerSizes[layer] * layerSizes[layer + 1]) from 0 to layer - 1)
+            int * weightLayerOffsets;
+
+            // weights[(weightLayerOffsets[layer]) + (dest_neuron * layerSize[layer + 1]) + src_neuron]
+            float * weights;
+
+            // biases[layerOffsets[layer] + neuron]
+            float * biases;
+
+            // activations[layerOffsets[layer] + neuron]
+            float * activations;
+
+            // z[layerOffsets[layer] + neuron]
+            float * z;
         
+
         public:
             Perceptron(int numLayers, int * layerSizes, float learningRate);
             ~Perceptron();
@@ -27,7 +48,7 @@ namespace Perceptron
             void backPropogation(float * input, float * goal);
             float sigmoid(float x, bool derivative);
             float cost(float expected, float calculated);
-
+            int getWeightIdx(int layer, int dest, int src);
     };
 
 };
