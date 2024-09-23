@@ -44,8 +44,8 @@ namespace Perceptron
             void print();
             void printActivations();
             void initializeWeightsAndBiases();
-            float * forwardPropogation(float * input);
-            void backPropogation(float * input, float * goal);
+            float * forwardPropagation(float * input);
+            void backPropagation(float * input, float * goal);
             float sigmoid(float x, bool derivative);
             float cost(float expected, float calculated);
             int getWeightIdx(int layer, int dest, int src);

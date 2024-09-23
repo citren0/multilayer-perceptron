@@ -135,7 +135,7 @@ namespace Perceptron
     }
 
 
-    float * Perceptron::forwardPropogation(float * input)
+    float * Perceptron::forwardPropagation(float * input)
     {
         // For each layer
         for (int layer = 0; layer < numLayers; layer++)
@@ -168,10 +168,10 @@ namespace Perceptron
     }
 
 
-    void Perceptron::backPropogation(float * input, float * goal)
+    void Perceptron::backPropagation(float * input, float * goal)
     {
         // Forward prop
-        float * forwardResult = forwardPropogation(input);
+        float * forwardResult = forwardPropagation(input);
 
         float * * errors = new float * [numLayers];
 

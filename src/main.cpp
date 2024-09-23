@@ -3,7 +3,7 @@
 #include "../MNIST_for_C/mnist.h"
 
 #define NUM_LAYERS 4
-#define TRAINING_EPOCHS 10
+#define TRAINING_EPOCHS 4
 #define NUM_CLASSES 10
 
 
@@ -44,7 +44,7 @@ int main()
 
         for (int i = 0; i < NUM_TRAIN; i++)
         {
-            perceptron.backPropogation(transformedTrainingData[i], trainingLabels[i]);
+            perceptron.backPropagation(transformedTrainingData[i], trainingLabels[i]);
         }
     }
     std::cout << "Training complete." << std::endl;
@@ -67,7 +67,7 @@ int main()
     int numRight = 0;
     for (int test = 0; test < NUM_TEST; test++)
     {
-        float * output = perceptron.forwardPropogation(transformedTestData[test]);
+        float * output = perceptron.forwardPropagation(transformedTestData[test]);
         std::cout << "Input label = " << (int)test_label_char[test][0] << ", Predicted Class = ";
 
         float highestProb = -1.0;
