@@ -9,4 +9,4 @@ all:
 .PHONY: clean
 
 clean:
-	rm a.outq
+	rm a.out
